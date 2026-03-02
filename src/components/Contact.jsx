@@ -1,10 +1,14 @@
 import React, { useState, useMemo } from 'react'
+import { sendContactEmail } from '../utils/email'
 
 export default function Contact() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -18,20 +22,27 @@ export default function Contact() {
 
   const isValid = !errors.name && !errors.email && !errors.message
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     if (!isValid) {
       setSubmitted(true)
       return
     }
-
-    // Open mail client with pre-filled email
-    const mailto = `mailto:astridbonoan@gmail.com?subject=Contact from ${encodeURIComponent(name)}&body=${encodeURIComponent(message + '\n\nFrom: ' + email)}`
-    window.location.href = mailto
-    setName('')
-    setEmail('')
-    setMessage('')
-    setSubmitted(false)
+    setSending(true)
+    setErrorMsg('')
+    setSuccess(false)
+    try {
+      await sendContactEmail({ name, email, message })
+      setSuccess(true)
+      setName('')
+      setEmail('')
+      setMessage('')
+      setSubmitted(false)
+    } catch (err) {
+      setErrorMsg('Failed to send message. Please try again later.')
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -39,6 +50,12 @@ export default function Contact() {
       <div className="max-w-2xl w-full">
         <h2 className="text-2xl font-semibold mb-4 text-white">Get In Touch</h2>
         <form onSubmit={handleSubmit} noValidate className="space-y-4 panel-bg p-6 rounded-lg shadow-2xl border border-transparent">
+          {success && (
+            <div className="mb-2 text-green-400">Message sent successfully!</div>
+          )}
+          {errorMsg && (
+            <div className="mb-2 text-red-400">{errorMsg}</div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-200">Name</label>
             <input
@@ -87,8 +104,8 @@ export default function Contact() {
           </div>
 
           <div className="flex items-center justify-end">
-            <button type="submit" disabled={!isValid} className={`px-5 py-2 rounded-md ${isValid ? 'bg-accent text-white' : 'bg-gray-700 text-gray-300 cursor-not-allowed'}`}>
-              Submit
+            <button type="submit" disabled={!isValid || sending} className={`px-5 py-2 rounded-md ${isValid && !sending ? 'bg-accent text-white' : 'bg-gray-700 text-gray-300 cursor-not-allowed'}`}>
+              {sending ? 'Sending...' : 'Submit'}
             </button>
           </div>
         </form>
