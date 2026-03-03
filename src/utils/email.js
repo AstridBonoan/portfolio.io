@@ -8,9 +8,9 @@ export function sendContactEmail({ name, email, message }) {
   const publicKey = 'sNE42j4Lqc2fiF6fq';
 
   const templateParams = {
-    from_name: name,
-    from_email: email,
-    message,
+    name,    // matches {{name}} in template
+    email,   // matches {{email}} in template
+    message, // matches {{message}} in template
   };
 
   return emailjs.send(serviceId, templateId, templateParams, publicKey);
